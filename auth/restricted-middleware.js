@@ -2,8 +2,27 @@ const bcrypt = require('bcryptjs');
 
 const Users = require('../users/users-model.js');
 
+const jwt = require('jsonwebtoken');
+const secrets = require('../config/secrets')
+
 module.exports = (req, res, next) => {
   const { username, password } = req.headers;
+  const token = req.headers.authorization;
+
+  if(token) {
+    jwt.verify(token, secrets.jwtSecret, (err, decodedToken) => {
+      if(err) {
+        //foul play
+        res.status(401).json({ message: 'Bad Panda' })
+      } else {
+        // token is gooooood
+        req.username = decodedToken.username
+        next();
+      }
+    })
+    next();
+    res.status(400).json({ message: 'No token provided'})
+  }
 
   if (username && password) {
     Users.findBy({ username })
